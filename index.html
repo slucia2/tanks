@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#faf9f6" />
+    <meta
+      name="description"
+      content="Tanks vs. Cats — a top-down tank battle against ricocheting cat-driven tanks."
+    />
+    <title>Tanks vs. Cats</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Tanks home">
+          <span class="brand-mark" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </span>
+          <span>TANKS <b>vs.</b> CATS</span>
+        </a>
+        <div class="status-pills" aria-label="Game status">
+          <button
+            id="livesButton"
+            class="pill lives-toggle"
+            type="button"
+            aria-pressed="false"
+            title="Toggle unlimited lives"
+          >
+            <span class="pill-label">LIVES</span>
+            <span id="health" class="hearts" aria-label="3 lives">● ● ●</span>
+          </button>
+          <div class="pill">
+            <span class="pill-label">YARN</span>
+            <span id="specialCount">3</span>
+          </div>
+          <button id="soundButton" class="icon-button" type="button" aria-label="Toggle sound">
+            <span aria-hidden="true">♪</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="game-frame" aria-label="Tanks game">
+        <canvas id="game" width="1280" height="720">
+          Your browser needs canvas support to play Tanks vs. Cats.
+        </canvas>
+
+        <div id="startScreen" class="overlay">
+          <div class="eyebrow">OPERATION · CLAW &amp; ORDER</div>
+          <h1>CLEAR<br />THE <em>CATS.</em></h1>
+          <p class="intro">
+            The cats have commandeered tanks. Out-drive their ricochets, bank shots
+            around the walls, and lob yarn to distract a whole platoon. One hit
+            destroys your tank. You have three lives for all nine levels.
+          </p>
+          <button id="startButton" class="primary-button" type="button">
+            <span>DEPLOY TANK</span>
+            <kbd>ENTER</kbd>
+          </button>
+          <div class="controls">
+            <div>
+              <span class="key-cluster"><kbd>W</kbd><span><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></span>
+              <p><b>DRIVE</b><small>Move the tank</small></p>
+            </div>
+            <div>
+              <span class="mouse-icon" aria-hidden="true"></span>
+              <p><b>AIM + FIRE</b><small>Mouse & left click</small></p>
+            </div>
+            <div>
+              <kbd class="wide-key">SPACE</kbd>
+              <p><b>YARN</b><small>Distract cat tanks</small></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="endScreen" class="overlay end-screen hidden">
+          <div id="endEyebrow" class="eyebrow">MISSION COMPLETE</div>
+          <h2 id="endTitle">CATS<br /><em>ROUTED.</em></h2>
+          <p id="endMessage" class="intro">The living room is secure. For now.</p>
+          <div class="mission-stats">
+            <div><span>TIME</span><b id="statTime">00:00</b></div>
+            <div><span>KILLS</span><b id="statKills">0</b></div>
+            <div><span>WAVE</span><b id="statWave">0</b></div>
+          </div>
+          <button id="restartButton" class="primary-button" type="button">
+            <span>PLAY AGAIN</span>
+            <kbd>R</kbd>
+          </button>
+        </div>
+
+        <div id="pauseScreen" class="pause-card hidden">
+          <span>PAUSED</span>
+          <small>Press P to resume</small>
+        </div>
+
+        <div class="canvas-hud" aria-hidden="true">
+          <div class="objective"><span></span> OBJECTIVE: CLEAR ALL CAT TANKS</div>
+          <div id="waveHud" class="wave-hud hidden">
+            WAVE <b id="waveNum">1</b><span class="wave-sep">/</span><span id="waveTotal">5</span>
+            <span class="wave-dot"></span>
+            <b id="enemyNum">0</b> LEFT
+          </div>
+          <div class="hint"><kbd>P</kbd> PAUSE</div>
+        </div>
+      </section>
+
+      <footer>
+        <p>Tip: shells ricochet once; orange rockets ricochet twice. Watch every bounce-back.</p>
+        <span>FIELD MANUAL · 01</span>
+      </footer>
+    </main>
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
