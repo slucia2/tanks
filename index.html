@@ -144,7 +144,23 @@
         <div id="pauseScreen" class="pause-card hidden">
           <span>PAUSED</span>
           <small class="pause-desktop">Press P to resume</small>
-          <small class="pause-touch">Tap ▶ to resume</small>
+          <div class="pause-mobile-panel">
+            <div class="pause-status" aria-label="Status">
+              <div><span>LIVES</span><b id="pauseHealth">● ● ●</b></div>
+              <div><span>YARN</span><b id="pauseYarn">3</b></div>
+            </div>
+            <button id="pauseLivesBtn" class="pause-setting" type="button" aria-pressed="false">
+              <span>UNLIMITED LIVES</span>
+              <em id="pauseLivesState">OFF</em>
+            </button>
+            <button id="pauseSoundBtn" class="pause-setting" type="button" aria-pressed="false">
+              <span>SOUND</span>
+              <em id="pauseSoundState">ON</em>
+            </button>
+            <button id="resumeTouch" class="primary-button pause-resume" type="button">
+              <span>RESUME</span>
+            </button>
+          </div>
         </div>
 
         <div id="touchControls" class="touch-controls hidden" aria-hidden="true">
@@ -156,14 +172,24 @@
             </div>
           </div>
           <div class="touch-right">
-            <button id="pauseTouch" class="touch-btn touch-pause" type="button" aria-label="Pause">II</button>
-            <button id="yarnTouch" class="touch-btn touch-yarn" type="button" aria-label="Throw yarn">YARN</button>
-            <button id="fireTouch" class="touch-btn touch-fire" type="button" aria-label="Fire">FIRE</button>
+            <button id="pauseTouch" class="touch-btn touch-pause" type="button" aria-label="Pause">
+              <span class="touch-btn-label">II</span>
+            </button>
+            <button id="yarnTouch" class="touch-btn touch-yarn" type="button" aria-label="Throw yarn">
+              <span class="touch-btn-label">YARN</span>
+            </button>
+            <button id="fireTouch" class="touch-btn touch-fire" type="button" aria-label="Fire">
+              <span class="touch-btn-label">FIRE</span>
+            </button>
           </div>
         </div>
 
         <div class="canvas-hud" aria-hidden="true">
           <div class="objective"><span></span> OBJECTIVE: CLEAR ALL CAT TANKS</div>
+          <div id="mobileStatus" class="mobile-status hidden">
+            <div class="mobile-stat"><span>LIVES</span><b id="mobileHealth">● ● ●</b></div>
+            <div class="mobile-stat"><span>YARN</span><b id="mobileYarn">3</b></div>
+          </div>
           <div id="waveHud" class="wave-hud hidden">
             WAVE <b id="waveNum">1</b><span class="wave-sep">/</span><span id="waveTotal">5</span>
             <span class="wave-dot"></span>

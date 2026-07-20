@@ -32,6 +32,16 @@ const ui = {
   fireTouch: document.querySelector("#fireTouch"),
   yarnTouch: document.querySelector("#yarnTouch"),
   pauseTouch: document.querySelector("#pauseTouch"),
+  resumeTouch: document.querySelector("#resumeTouch"),
+  pauseLivesBtn: document.querySelector("#pauseLivesBtn"),
+  pauseSoundBtn: document.querySelector("#pauseSoundBtn"),
+  pauseLivesState: document.querySelector("#pauseLivesState"),
+  pauseSoundState: document.querySelector("#pauseSoundState"),
+  pauseHealth: document.querySelector("#pauseHealth"),
+  pauseYarn: document.querySelector("#pauseYarn"),
+  mobileStatus: document.querySelector("#mobileStatus"),
+  mobileHealth: document.querySelector("#mobileHealth"),
+  mobileYarn: document.querySelector("#mobileYarn"),
 };
 
 const W = canvas.width;
@@ -447,14 +457,30 @@ function formatTime(seconds) {
 function updateHud() {
   if (!game) return;
   const lives = Math.max(0, game.lives);
-  ui.health.textContent = unlimitedLives
+  const hearts = unlimitedLives
     ? "∞"
     : `${"● ".repeat(lives)}${"○ ".repeat(3 - lives)}`.trim();
+  ui.health.textContent = hearts;
   ui.health.setAttribute("aria-label", unlimitedLives ? "Unlimited lives" : `${lives} lives`);
   ui.livesButton.setAttribute("aria-pressed", String(unlimitedLives));
   ui.specials.textContent = game.player.specials;
   ui.waveNum.textContent = game.wave + 1;
   ui.enemyNum.textContent = game.enemies.length;
+
+  if (ui.mobileHealth) ui.mobileHealth.textContent = hearts;
+  if (ui.mobileYarn) ui.mobileYarn.textContent = game.player.specials;
+  if (ui.pauseHealth) ui.pauseHealth.textContent = hearts;
+  if (ui.pauseYarn) ui.pauseYarn.textContent = game.player.specials;
+  if (ui.pauseLivesBtn) {
+    ui.pauseLivesBtn.setAttribute("aria-pressed", String(unlimitedLives));
+    ui.pauseLivesState.textContent = unlimitedLives ? "ON" : "OFF";
+  }
+  if (ui.pauseSoundBtn) {
+    ui.pauseSoundBtn.setAttribute("aria-pressed", String(!muted));
+    ui.pauseSoundState.textContent = muted ? "OFF" : "ON";
+  }
+  const showMobileHud = wantsTouchUi() && (mode === "playing" || mode === "paused" || mode === "respawning");
+  if (ui.mobileStatus) ui.mobileStatus.classList.toggle("hidden", !showMobileHud);
 }
 
 function ensureAudio() {
@@ -1643,8 +1669,9 @@ function setTouchControlsVisible(visible) {
   const show = visible && wantsTouchUi() && (mode === "playing" || mode === "paused" || mode === "respawning");
   ui.touchControls.classList.toggle("hidden", !show);
   ui.touchControls.setAttribute("aria-hidden", String(!show));
-  touch.using = show;
-  if (!show) {
+  ui.touchControls.classList.toggle("is-paused", mode === "paused");
+  touch.using = show && mode !== "paused";
+  if (!show || mode === "paused") {
     touch.mx = 0;
     touch.my = 0;
     touch.firing = false;
@@ -1653,12 +1680,15 @@ function setTouchControlsVisible(visible) {
     ui.fireTouch.classList.remove("pressed");
   }
   syncPauseButton();
+  updateHud();
 }
 
 function syncPauseButton() {
   const paused = mode === "paused";
   ui.pauseTouch.setAttribute("aria-pressed", String(paused));
-  ui.pauseTouch.textContent = paused ? "▶" : "II";
+  const label = ui.pauseTouch.querySelector(".touch-btn-label");
+  if (label) label.textContent = paused ? "▶" : "II";
+  else ui.pauseTouch.textContent = paused ? "▶" : "II";
 }
 
 function togglePause() {
@@ -1672,7 +1702,24 @@ function togglePause() {
     mode = "playing";
     ui.pause.classList.add("hidden");
   }
+  setTouchControlsVisible(mode === "playing" || mode === "paused" || mode === "respawning");
   syncPauseButton();
+}
+
+function toggleUnlimitedLives() {
+  unlimitedLives = !unlimitedLives;
+  updateHud();
+  ensureAudio();
+  tone(unlimitedLives ? 660 : 330, .1, "sine", .025, unlimitedLives ? 120 : -80);
+}
+
+function toggleSound() {
+  muted = !muted;
+  if (muted) meowVoices.forEach(voice => voice.pause());
+  ui.soundButton.classList.toggle("muted", muted);
+  ui.soundButton.querySelector("span").textContent = muted ? "×" : "♪";
+  updateHud();
+  if (!muted) { ensureAudio(); tone(440, .08); }
 }
 
 function resetStickKnob() {
@@ -1813,18 +1860,15 @@ document.querySelector(".game-frame").addEventListener("touchmove", event => {
 
 ui.startButton.addEventListener("click", startGame);
 ui.restartButton.addEventListener("click", startGame);
-ui.livesButton.addEventListener("click", () => {
-  unlimitedLives = !unlimitedLives;
-  updateHud();
+ui.livesButton.addEventListener("click", toggleUnlimitedLives);
+ui.soundButton.addEventListener("click", toggleSound);
+if (ui.pauseLivesBtn) ui.pauseLivesBtn.addEventListener("click", toggleUnlimitedLives);
+if (ui.pauseSoundBtn) ui.pauseSoundBtn.addEventListener("click", () => {
+  toggleSound();
   ensureAudio();
-  tone(unlimitedLives ? 660 : 330, .1, "sine", .025, unlimitedLives ? 120 : -80);
 });
-ui.soundButton.addEventListener("click", () => {
-  muted = !muted;
-  if (muted) meowVoices.forEach(voice => voice.pause());
-  ui.soundButton.classList.toggle("muted", muted);
-  ui.soundButton.querySelector("span").textContent = muted ? "×" : "♪";
-  if (!muted) { ensureAudio(); tone(440, .08); }
+if (ui.resumeTouch) ui.resumeTouch.addEventListener("click", () => {
+  if (mode === "paused") togglePause();
 });
 
 ui.nameInput.addEventListener("input", () => {
