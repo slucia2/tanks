@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#faf9f6" />
     <meta
       name="description"
@@ -64,7 +67,7 @@
             <span>DEPLOY TANK</span>
             <kbd>ENTER</kbd>
           </button>
-          <div class="controls">
+          <div class="controls controls-desktop">
             <div>
               <span class="key-cluster"><kbd>W</kbd><span><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></span>
               <p><b>DRIVE</b><small>Move the tank</small></p>
@@ -78,6 +81,20 @@
               <p><b>YARN</b><small>Distract cat tanks</small></p>
             </div>
           </div>
+          <div class="controls controls-touch">
+            <div>
+              <span class="touch-hint-icon touch-hint-stick" aria-hidden="true"></span>
+              <p><b>STICK</b><small>Drag to drive</small></p>
+            </div>
+            <div>
+              <span class="touch-hint-icon touch-hint-fire" aria-hidden="true">●</span>
+              <p><b>FIRE</b><small>Hold to shoot</small></p>
+            </div>
+            <div>
+              <span class="touch-hint-icon touch-hint-yarn" aria-hidden="true">◎</span>
+              <p><b>YARN</b><small>Distract cats</small></p>
+            </div>
+          </div>
         </div>
 
         <div id="endScreen" class="overlay end-screen hidden">
@@ -87,8 +104,37 @@
           <div class="mission-stats">
             <div><span>TIME</span><b id="statTime">00:00</b></div>
             <div><span>KILLS</span><b id="statKills">0</b></div>
-            <div><span>WAVE</span><b id="statWave">0</b></div>
+            <div><span>DEATHS</span><b id="statDeaths">0</b></div>
+            <div><span>SCORE</span><b id="statScore">0</b></div>
           </div>
+
+          <div id="scoreEntry" class="score-entry hidden">
+            <label class="score-entry-label" for="nameInput">ENTER INITIALS</label>
+            <div class="arcade-row">
+              <input
+                id="nameInput"
+                class="arcade-input"
+                type="text"
+                maxlength="3"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                inputmode="text"
+                aria-label="Three letter initials"
+                value="AAA"
+              />
+              <button id="submitScore" class="primary-button score-submit" type="button">
+                <span>SAVE SCORE</span>
+              </button>
+            </div>
+            <p id="scoreNote" class="score-note"></p>
+          </div>
+
+          <div class="leaderboard" aria-label="High scores">
+            <div class="leaderboard-title">HIGH SCORES</div>
+            <ol id="leaderboardList" class="leaderboard-list"></ol>
+          </div>
+
           <button id="restartButton" class="primary-button" type="button">
             <span>PLAY AGAIN</span>
             <kbd>R</kbd>
@@ -97,7 +143,23 @@
 
         <div id="pauseScreen" class="pause-card hidden">
           <span>PAUSED</span>
-          <small>Press P to resume</small>
+          <small class="pause-desktop">Press P to resume</small>
+          <small class="pause-touch">Tap ▶ to resume</small>
+        </div>
+
+        <div id="touchControls" class="touch-controls hidden" aria-hidden="true">
+          <div class="touch-left">
+            <div id="moveStick" class="touch-stick" role="application" aria-label="Move stick">
+              <div class="touch-stick-base">
+                <div id="moveKnob" class="touch-stick-knob"></div>
+              </div>
+            </div>
+          </div>
+          <div class="touch-right">
+            <button id="pauseTouch" class="touch-btn touch-pause" type="button" aria-label="Pause">II</button>
+            <button id="yarnTouch" class="touch-btn touch-yarn" type="button" aria-label="Throw yarn">YARN</button>
+            <button id="fireTouch" class="touch-btn touch-fire" type="button" aria-label="Fire">FIRE</button>
+          </div>
         </div>
 
         <div class="canvas-hud" aria-hidden="true">
@@ -107,7 +169,7 @@
             <span class="wave-dot"></span>
             <b id="enemyNum">0</b> LEFT
           </div>
-          <div class="hint"><kbd>P</kbd> PAUSE</div>
+          <div class="hint hint-desktop"><kbd>P</kbd> PAUSE</div>
         </div>
       </section>
 

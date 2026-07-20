@@ -19,7 +19,19 @@ const ui = {
   endMessage: document.querySelector("#endMessage"),
   statTime: document.querySelector("#statTime"),
   statKills: document.querySelector("#statKills"),
-  statWave: document.querySelector("#statWave"),
+  statDeaths: document.querySelector("#statDeaths"),
+  statScore: document.querySelector("#statScore"),
+  scoreEntry: document.querySelector("#scoreEntry"),
+  nameInput: document.querySelector("#nameInput"),
+  submitScore: document.querySelector("#submitScore"),
+  scoreNote: document.querySelector("#scoreNote"),
+  leaderboardList: document.querySelector("#leaderboardList"),
+  touchControls: document.querySelector("#touchControls"),
+  moveStick: document.querySelector("#moveStick"),
+  moveKnob: document.querySelector("#moveKnob"),
+  fireTouch: document.querySelector("#fireTouch"),
+  yarnTouch: document.querySelector("#yarnTouch"),
+  pauseTouch: document.querySelector("#pauseTouch"),
 };
 
 const W = canvas.width;
@@ -99,9 +111,18 @@ const SPAWNS = [
 ];
 
 const PLAYER_MAX_SHELLS = 5;
+const LB_KEY = "tanks-vs-cats-lb-v1";
+const LB_MAX = 8;
 
 const keys = new Set();
 const mouse = { x: W * 0.7, y: H * 0.5, down: false };
+const touch = {
+  using: false,
+  mx: 0,
+  my: 0,
+  firing: false,
+  pointerId: null,
+};
 let mode = "menu";
 let muted = false;
 let unlimitedLives = false;
@@ -116,6 +137,12 @@ let meowVoiceIndex = 0;
 let shake = 0;
 let freeze = 0;
 let game;
+let pendingScore = null;
+let highlightScoreId = null;
+
+const wantsTouchUi = () =>
+  window.matchMedia("(pointer: coarse)").matches
+  || window.matchMedia("(max-width: 820px)").matches;
 
 const walls = [
   // Left mid L
@@ -153,6 +180,7 @@ function resetGame() {
     time: 0,
     wave: 0,
     kills: 0,
+    deaths: 0,
     levelStartKills: 0,
     bounceCount: 0,
     killsSinceYarn: 0,
@@ -170,6 +198,8 @@ function resetGame() {
     banner: null,
     waveClearTimer: 0,
   };
+  pendingScore = null;
+  highlightScoreId = null;
   updateHud();
 }
 
@@ -181,6 +211,8 @@ function startGame() {
   ui.pause.classList.add("hidden");
   ui.waveHud.classList.remove("hidden");
   ui.waveTotal.textContent = WAVES.length;
+  ui.scoreEntry.classList.add("hidden");
+  setTouchControlsVisible(true);
   ensureAudio();
   sound("start");
   startWave(0);
@@ -257,6 +289,26 @@ function makeEnemy(kind, x, y) {
 function endGame(won) {
   mode = won ? "won" : "lost";
   mouse.down = false;
+  touch.firing = false;
+  touch.mx = 0;
+  touch.my = 0;
+  resetStickKnob();
+  setTouchControlsVisible(false);
+  ui.pause.classList.add("hidden");
+
+  const score = computeScore(won);
+  pendingScore = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    score,
+    time: Math.floor(game.time),
+    deaths: game.deaths,
+    kills: game.kills,
+    wave: Math.min(game.wave + 1, WAVES.length),
+    won,
+    unlimited: unlimitedLives,
+    submitted: false,
+  };
+
   ui.endEyebrow.textContent = won ? "MISSION COMPLETE" : "MISSION FAILED";
   ui.endTitle.innerHTML = won ? "CATS<br><em>ROUTED.</em>" : "TANK<br><em>SCRAPPED.</em>";
   ui.endMessage.textContent = won
@@ -264,10 +316,126 @@ function endGame(won) {
     : "The platoon overran you. Regroup and roll out again.";
   ui.statTime.textContent = formatTime(game.time);
   ui.statKills.textContent = game.kills;
-  ui.statWave.textContent = `${Math.min(game.wave + 1, WAVES.length)}/${WAVES.length}`;
+  ui.statDeaths.textContent = game.deaths;
+  ui.statScore.textContent = score.toLocaleString();
+  setupScoreEntry(pendingScore);
+  renderLeaderboard();
   ui.end.classList.remove("hidden");
   ui.waveHud.classList.add("hidden");
   sound(won ? "win" : "lose");
+}
+
+function computeScore(won) {
+  const time = Math.floor(game.time);
+  const wavesCleared = won ? WAVES.length : game.wave;
+  const base = wavesCleared * 8000 + game.kills * 450;
+  const clearBonus = won ? 25000 : 0;
+  const timeBonus = won
+    ? Math.max(0, 780 - time) * 90
+    : Math.max(0, wavesCleared * 40 - Math.floor(time / 4)) * 20;
+  const deathPenalty = game.deaths * 3500;
+  return Math.max(0, Math.floor(base + clearBonus + timeBonus - deathPenalty));
+}
+
+function loadScores() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LB_KEY) || "[]");
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveScores(list) {
+  localStorage.setItem(LB_KEY, JSON.stringify(list.slice(0, LB_MAX)));
+}
+
+function setupScoreEntry(entry) {
+  if (!entry) {
+    ui.scoreEntry.classList.add("hidden");
+    return;
+  }
+  ui.scoreEntry.classList.remove("hidden");
+  ui.submitScore.disabled = false;
+  ui.nameInput.value = (localStorage.getItem("tanks-vs-cats-name") || "AAA").slice(0, 3).toUpperCase();
+
+  if (entry.unlimited) {
+    ui.scoreNote.textContent = "Practice / unlimited lives — not eligible for the high-score board.";
+    ui.scoreNote.className = "score-note blocked";
+    ui.submitScore.disabled = true;
+    ui.nameInput.disabled = true;
+  } else {
+    ui.scoreNote.textContent = "Arcade board is saved on this device. Faster clears + fewer deaths rank higher.";
+    ui.scoreNote.className = "score-note eligible";
+    ui.nameInput.disabled = false;
+    if (entry.submitted) {
+      ui.scoreNote.textContent = "Score saved to this device's high-score board.";
+      ui.submitScore.disabled = true;
+    }
+  }
+}
+
+function sanitizeInitials(value) {
+  const cleaned = (value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 3);
+  return cleaned.padEnd(3, "A");
+}
+
+function submitPendingScore() {
+  if (!pendingScore || pendingScore.unlimited || pendingScore.submitted) return;
+  const name = sanitizeInitials(ui.nameInput.value);
+  ui.nameInput.value = name;
+  localStorage.setItem("tanks-vs-cats-name", name);
+
+  const list = loadScores();
+  list.push({
+    id: pendingScore.id,
+    name,
+    score: pendingScore.score,
+    time: pendingScore.time,
+    deaths: pendingScore.deaths,
+    kills: pendingScore.kills,
+    won: pendingScore.won,
+    date: Date.now(),
+  });
+  list.sort((a, b) => b.score - a.score || a.time - b.time || a.deaths - b.deaths);
+  saveScores(list);
+  pendingScore.submitted = true;
+  highlightScoreId = pendingScore.id;
+  ui.submitScore.disabled = true;
+  ui.scoreNote.textContent = "Score saved to this device's high-score board.";
+  ui.scoreNote.className = "score-note eligible";
+  renderLeaderboard();
+  ensureAudio();
+  tone(520, .08, "square", .03);
+  setTimeout(() => tone(780, .12, "square", .03), 70);
+}
+
+function renderLeaderboard() {
+  const list = loadScores();
+  if (!list.length) {
+    ui.leaderboardList.innerHTML = `<li class="empty">NO SCORES YET — CLEAR THE CATS</li>`;
+    return;
+  }
+  ui.leaderboardList.innerHTML = list.map((row, i) => {
+    const hi = row.id && row.id === highlightScoreId ? " highlight" : "";
+    return `<li class="${hi.trim()}">
+      <span class="rank">${String(i + 1).padStart(2, "0")}</span>
+      <span class="name">${escapeHtml(row.name)}</span>
+      <span class="pts">${Number(row.score).toLocaleString()}</span>
+      <span class="meta">${formatTime(row.time)} · ${row.deaths}D</span>
+    </li>`;
+  }).join("");
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function formatTime(seconds) {
@@ -575,6 +743,10 @@ function updatePlayer(dt) {
 
   let mx = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0);
   let my = (keys.has("KeyS") ? 1 : 0) - (keys.has("KeyW") ? 1 : 0);
+  if (touch.using && (Math.abs(touch.mx) > 0.08 || Math.abs(touch.my) > 0.08)) {
+    mx = touch.mx;
+    my = touch.my;
+  }
   const mag = Math.hypot(mx, my) || 1;
   mx /= mag; my /= mag;
   const speed = 205;
@@ -583,8 +755,30 @@ function updatePlayer(dt) {
     p.angle += angleDelta(p.angle, Math.atan2(my, mx)) * Math.min(1, dt * 10);
     p.tread += dt * 10;
   }
-  p.turret = angleTo(p, mouse);
-  if (mouse.down) shoot();
+
+  if (touch.using) {
+    const target = nearestEnemyForAim();
+    if (target) p.turret = angleTo(p, target);
+    else if (Math.abs(mx) > 0.01 || Math.abs(my) > 0.01) p.turret = Math.atan2(my, mx);
+  } else {
+    p.turret = angleTo(p, mouse);
+  }
+  if (mouse.down || touch.firing) shoot();
+}
+
+function nearestEnemyForAim() {
+  const p = game.player;
+  let best = null;
+  let bestDist = Infinity;
+  for (const e of game.enemies) {
+    if (!e.alive || e.spawnT > 0) continue;
+    const d = distance(p, e);
+    if (d < bestDist) {
+      bestDist = d;
+      best = e;
+    }
+  }
+  return best;
 }
 
 function updateEnemies(dt) {
@@ -805,8 +999,11 @@ function damagePlayer(angle) {
   const p = game.player;
   if (p.invincible > 0 || mode !== "playing") return;
   p.health = 0;
+  game.deaths++;
   if (!unlimitedLives) game.lives--;
   mode = "respawning";
+  mouse.down = false;
+  touch.firing = false;
   shake = 18;
   freeze = .08;
   burst(p.x, p.y, colors.orange, 22);
@@ -1442,32 +1639,178 @@ function canvasPosition(event) {
   };
 }
 
+function setTouchControlsVisible(visible) {
+  const show = visible && wantsTouchUi() && (mode === "playing" || mode === "paused" || mode === "respawning");
+  ui.touchControls.classList.toggle("hidden", !show);
+  ui.touchControls.setAttribute("aria-hidden", String(!show));
+  touch.using = show;
+  if (!show) {
+    touch.mx = 0;
+    touch.my = 0;
+    touch.firing = false;
+    touch.pointerId = null;
+    resetStickKnob();
+    ui.fireTouch.classList.remove("pressed");
+  }
+  syncPauseButton();
+}
+
+function syncPauseButton() {
+  const paused = mode === "paused";
+  ui.pauseTouch.setAttribute("aria-pressed", String(paused));
+  ui.pauseTouch.textContent = paused ? "▶" : "II";
+}
+
+function togglePause() {
+  if (mode === "playing") {
+    mode = "paused";
+    mouse.down = false;
+    touch.firing = false;
+    ui.fireTouch.classList.remove("pressed");
+    ui.pause.classList.remove("hidden");
+  } else if (mode === "paused") {
+    mode = "playing";
+    ui.pause.classList.add("hidden");
+  }
+  syncPauseButton();
+}
+
+function resetStickKnob() {
+  ui.moveKnob.style.transform = "translate(0px, 0px)";
+  ui.moveStick.classList.remove("active");
+}
+
+function updateStickFromPoint(clientX, clientY) {
+  const rect = ui.moveStick.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const max = rect.width * 0.34;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+  const dist = Math.hypot(dx, dy) || 1;
+  if (dist > max) {
+    dx = (dx / dist) * max;
+    dy = (dy / dist) * max;
+  }
+  touch.mx = dx / max;
+  touch.my = dy / max;
+  ui.moveKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  ui.moveStick.classList.add("active");
+}
+
+function bindStick() {
+  const stick = ui.moveStick;
+  stick.addEventListener("pointerdown", event => {
+    if (mode !== "playing" && mode !== "paused") return;
+    if (mode === "paused") return;
+    event.preventDefault();
+    stick.setPointerCapture(event.pointerId);
+    touch.pointerId = event.pointerId;
+    touch.using = true;
+    updateStickFromPoint(event.clientX, event.clientY);
+  });
+  stick.addEventListener("pointermove", event => {
+    if (touch.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    updateStickFromPoint(event.clientX, event.clientY);
+  });
+  const endStick = event => {
+    if (touch.pointerId !== null && event.pointerId !== touch.pointerId) return;
+    touch.pointerId = null;
+    touch.mx = 0;
+    touch.my = 0;
+    resetStickKnob();
+  };
+  stick.addEventListener("pointerup", endStick);
+  stick.addEventListener("pointercancel", endStick);
+}
+
+function bindTouchButtons() {
+  const hold = (el, on, off) => {
+    const start = event => {
+      event.preventDefault();
+      el.classList.add("pressed");
+      on(event);
+    };
+    const end = event => {
+      el.classList.remove("pressed");
+      off?.(event);
+    };
+    el.addEventListener("pointerdown", start);
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+    el.addEventListener("pointerleave", end);
+  };
+
+  hold(ui.fireTouch, () => {
+    if (mode !== "playing") return;
+    touch.using = true;
+    touch.firing = true;
+    ensureAudio();
+    shoot();
+  }, () => { touch.firing = false; });
+
+  ui.yarnTouch.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    if (mode !== "playing") return;
+    touch.using = true;
+    ensureAudio();
+    shootYarn();
+    ui.yarnTouch.classList.add("pressed");
+  });
+  ui.yarnTouch.addEventListener("pointerup", () => ui.yarnTouch.classList.remove("pressed"));
+  ui.yarnTouch.addEventListener("pointercancel", () => ui.yarnTouch.classList.remove("pressed"));
+
+  ui.pauseTouch.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    if (mode === "playing" || mode === "paused") {
+      ensureAudio();
+      togglePause();
+    }
+  });
+}
+
 window.addEventListener("keydown", event => {
+  if (event.target === ui.nameInput) return;
   keys.add(event.code);
   if (["Space", "ArrowUp", "ArrowDown"].includes(event.code)) event.preventDefault();
   if (event.code === "Enter" && mode === "menu") startGame();
-  if (event.code === "KeyR" && (mode === "won" || mode === "lost")) startGame();
-  if (event.code === "Space" && mode === "playing") shootYarn();
-  if (event.code === "KeyP" && (mode === "playing" || mode === "paused")) {
-    mode = mode === "paused" ? "playing" : "paused";
-    ui.pause.classList.toggle("hidden", mode !== "paused");
+  if (event.code === "KeyR" && (mode === "won" || mode === "lost") && document.activeElement !== ui.nameInput) {
+    startGame();
   }
+  if (event.code === "Space" && mode === "playing") shootYarn();
+  if (event.code === "KeyP" && (mode === "playing" || mode === "paused")) togglePause();
 });
 window.addEventListener("keyup", event => keys.delete(event.code));
 window.addEventListener("blur", () => {
-  keys.clear(); mouse.down = false;
+  keys.clear();
+  mouse.down = false;
+  touch.firing = false;
+  touch.mx = 0;
+  touch.my = 0;
+  resetStickKnob();
   if (mode === "playing") {
     mode = "paused";
     ui.pause.classList.remove("hidden");
+    syncPauseButton();
   }
 });
-canvas.addEventListener("mousemove", event => Object.assign(mouse, canvasPosition(event)));
+canvas.addEventListener("mousemove", event => {
+  if (touch.using && wantsTouchUi()) return;
+  Object.assign(mouse, canvasPosition(event));
+});
 canvas.addEventListener("mousedown", event => {
   if (event.button === 0) { mouse.down = true; ensureAudio(); }
   if (event.button === 2 && mode === "playing") shootYarn();
 });
 window.addEventListener("mouseup", event => { if (event.button === 0) mouse.down = false; });
 canvas.addEventListener("contextmenu", event => event.preventDefault());
+
+// Block multi-touch scroll/zoom on the game frame while playing.
+document.querySelector(".game-frame").addEventListener("touchmove", event => {
+  if (mode === "playing" || mode === "paused") event.preventDefault();
+}, { passive: false });
+
 ui.startButton.addEventListener("click", startGame);
 ui.restartButton.addEventListener("click", startGame);
 ui.livesButton.addEventListener("click", () => {
@@ -1484,6 +1827,28 @@ ui.soundButton.addEventListener("click", () => {
   if (!muted) { ensureAudio(); tone(440, .08); }
 });
 
+ui.nameInput.addEventListener("input", () => {
+  const caret = ui.nameInput.selectionStart;
+  ui.nameInput.value = ui.nameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+  ui.nameInput.setSelectionRange(caret, caret);
+});
+ui.nameInput.addEventListener("keydown", event => {
+  if (event.code === "Enter") {
+    event.preventDefault();
+    submitPendingScore();
+  }
+  event.stopPropagation();
+});
+ui.submitScore.addEventListener("click", submitPendingScore);
+
+bindStick();
+bindTouchButtons();
+renderLeaderboard();
+window.addEventListener("resize", () => {
+  if (mode === "playing" || mode === "paused" || mode === "respawning") setTouchControlsVisible(true);
+});
+
 resetGame();
 mode = "menu";
+setTouchControlsVisible(false);
 requestAnimationFrame(frame);

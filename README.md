@@ -21,12 +21,19 @@ any shell (yours or theirs) can wreck any tank.
 
 ## Controls
 
+Desktop:
 - `W A S D` — drive
 - Mouse — aim the turret
 - Left click — fire a shell (max 5 on screen, ricochets once)
 - `Space` or right click — lob a yarn ball; nearby cats abandon their tanks to play with it
 - `P` — pause
 - `R` — restart after a mission
+
+Mobile / touch:
+- Left stick — drag to drive (turret auto-aims the nearest cat tank)
+- **FIRE** — hold to shoot
+- **YARN** — tap to distract
+- **II / ▶** — pause / resume
 
 ## Rules
 
@@ -35,6 +42,12 @@ any shell (yours or theirs) can wreck any tank.
 - Click the **LIVES** pill to toggle unlimited-lives mode. Death still restarts
   the current level, but no life is consumed.
 - Every three kills refills one yarn ball (up to three).
+
+## Scoring
+
+End-of-run score rewards waves cleared, kills, and a fast clear; deaths subtract.
+Enter 3 arcade initials to save a high score on **this device** (`localStorage`).
+Unlimited-lives / practice runs show a score but **cannot** be saved to the board.
 
 ## Enemy types
 
