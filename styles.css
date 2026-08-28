@@ -235,6 +235,7 @@ kbd {
 .objective { position: absolute; top: 18px; left: 20px; background: rgba(255,245,224,.88); border: 2px solid var(--soft-line); border-radius: 10px; padding: 7px 10px; }
 .objective span { display: inline-block; width: 5px; height: 5px; background: var(--teal); margin-right: 5px; border-radius: 999px; }
 .wave-hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(255,245,224,.9); border: 2px solid var(--soft-line); border-radius: 10px; padding: 7px 13px; color: var(--ink); font-size: 10px; letter-spacing: .08em; }
+.wave-hud b { color: var(--orange); }
 .wave-hud.hidden { display: none; }
 .hint { position: absolute; right: 16px; bottom: 15px; }
 .hint kbd { padding: 3px 6px; background: rgba(255,245,224,.5); }
@@ -450,6 +451,10 @@ kbd {
 .touch-btn-label {
   font: 700 10px "Silkscreen", monospace;
   letter-spacing: .06em;
+}
+.touch-btn:active, .touch-btn.pressed {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(139,126,184,.22);
 }
 .touch-fire {
   width: 78px;
