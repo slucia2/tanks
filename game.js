@@ -109,23 +109,162 @@ const KINDS = {
   },
 };
 
-const WAVES = [
-  ["chaser", "chaser"],
-  ["chaser", "chaser", "dasher"],
-  ["chaser", "dasher", "dasher"],
-  ["chaser", "rook", "dasher"],
-  ["chaser", "bruiser", "dasher", "rook"],
-  ["bruiser", "bruiser", "chaser", "dasher", "dasher"],
-  ["rook", "bruiser", "bruiser", "dasher", "dasher", "chaser"],
-  ["rook", "rook", "bruiser", "bruiser", "dasher", "dasher", "chaser"],
-  ["rook", "rook", "bruiser", "bruiser", "dasher", "dasher", "chaser", "chaser"],
-];
-
-// Open pads kept clear of the redesigned maze.
-const SPAWNS = [
-  { x: 1120, y: 120 }, { x: 1120, y: 600 }, { x: 1120, y: 360 },
-  { x: 640, y: 100 }, { x: 640, y: 620 }, { x: 900, y: 360 },
-  { x: 420, y: 120 }, { x: 420, y: 600 },
+// Preset missions inspired by Wii Play Tanks:
+// large solid blocks, clear lanes, fixed starts, enemy placements that match cover.
+const LEVELS = [
+  {
+    // L1 — open duel: one center mass, two blues across the map
+    name: "STANDARD BLUE PATROL",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 540, y: 250, w: 200, h: 220 },
+    ],
+    enemies: [
+      { kind: "chaser", x: 1080, y: 160 },
+      { kind: "chaser", x: 1080, y: 560 },
+    ],
+  },
+  {
+    // L2 — dual vertical walls / ambush corners (classic Wii dual-wall stage)
+    name: "CORRIDOR AMBUSH",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 400, y: 80, w: 80, h: 240 },
+      { x: 400, y: 400, w: 80, h: 240 },
+      { x: 820, y: 80, w: 80, h: 240 },
+      { x: 820, y: 400, w: 80, h: 240 },
+    ],
+    enemies: [
+      { kind: "chaser", x: 640, y: 140 },
+      { kind: "chaser", x: 640, y: 580 },
+      { kind: "dasher", x: 1080, y: 360 },
+    ],
+  },
+  {
+    // L3 — staggered horizontal slabs = speed lanes for dashers
+    name: "SPEED TRIAL",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 300, y: 140, w: 360, h: 90 },
+      { x: 620, y: 490, w: 360, h: 90 },
+      { x: 980, y: 260, w: 100, h: 200 },
+    ],
+    enemies: [
+      { kind: "chaser", x: 500, y: 360 },
+      { kind: "dasher", x: 880, y: 140 },
+      { kind: "dasher", x: 880, y: 580 },
+    ],
+  },
+  {
+    // L4 — left cover pillars + open right pad for the rocket rook
+    name: "ROCKET CAT SPOTTED",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 300, y: 100, w: 90, h: 220 },
+      { x: 300, y: 400, w: 90, h: 220 },
+      { x: 700, y: 280, w: 220, h: 160 },
+    ],
+    enemies: [
+      { kind: "rook", x: 1080, y: 360 },
+      { kind: "chaser", x: 520, y: 160 },
+      { kind: "dasher", x: 520, y: 560 },
+    ],
+  },
+  {
+    // L5 — offset pillars create chase lanes for the void cat
+    name: "THE VOID ROLLS IN",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 420, y: 80, w: 100, h: 260 },
+      { x: 760, y: 380, w: 100, h: 260 },
+      { x: 560, y: 300, w: 160, h: 120 },
+    ],
+    enemies: [
+      { kind: "bruiser", x: 1080, y: 160 },
+      { kind: "chaser", x: 640, y: 140 },
+      { kind: "dasher", x: 640, y: 580 },
+      { kind: "rook", x: 1080, y: 560 },
+    ],
+  },
+  {
+    // L6 — four chambers (Wii L9 spirit): cross with center gaps
+    name: "FOUR PAWS",
+    player: { x: 160, y: 540, angle: -0.2 },
+    walls: [
+      { x: 580, y: 60, w: 90, h: 230 },
+      { x: 580, y: 430, w: 90, h: 230 },
+      { x: 60, y: 315, w: 340, h: 90 },
+      { x: 880, y: 315, w: 340, h: 90 },
+    ],
+    enemies: [
+      { kind: "bruiser", x: 160, y: 160 },
+      { kind: "bruiser", x: 1080, y: 160 },
+      { kind: "chaser", x: 1080, y: 540 },
+      { kind: "dasher", x: 900, y: 180 },
+      { kind: "dasher", x: 420, y: 540 },
+    ],
+  },
+  {
+    // L7 — rocket alley: long horizontals + side pads for dual rooks
+    name: "ROCKET ALLEY",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 280, y: 80, w: 520, h: 80 },
+      { x: 480, y: 560, w: 520, h: 80 },
+      { x: 520, y: 260, w: 100, h: 200 },
+      { x: 900, y: 200, w: 140, h: 140 },
+    ],
+    enemies: [
+      { kind: "rook", x: 1080, y: 120 },
+      { kind: "bruiser", x: 360, y: 360 },
+      { kind: "bruiser", x: 760, y: 400 },
+      { kind: "dasher", x: 1080, y: 420 },
+      { kind: "dasher", x: 200, y: 580 },
+      { kind: "chaser", x: 1080, y: 580 },
+    ],
+  },
+  {
+    // L8 — zigzag shelves (Wii zigzag path): push fights around corners
+    name: "NINE LIVES, NO MERCY",
+    player: { x: 140, y: 140, angle: 0.4 },
+    walls: [
+      { x: 280, y: 220, w: 420, h: 90 },
+      { x: 580, y: 410, w: 420, h: 90 },
+      { x: 200, y: 500, w: 120, h: 140 },
+      { x: 980, y: 80, w: 120, h: 160 },
+    ],
+    enemies: [
+      { kind: "rook", x: 1080, y: 360 },
+      { kind: "rook", x: 700, y: 160 },
+      { kind: "bruiser", x: 400, y: 580 },
+      { kind: "bruiser", x: 900, y: 580 },
+      { kind: "dasher", x: 500, y: 360 },
+      { kind: "dasher", x: 1080, y: 160 },
+      { kind: "chaser", x: 200, y: 400 },
+    ],
+  },
+  {
+    // L9 — final arena: big blocks, open firing pads, chase space
+    name: "THE FINAL MEOWDOWN",
+    player: { x: 140, y: 360, angle: 0 },
+    walls: [
+      { x: 340, y: 80, w: 140, h: 200 },
+      { x: 340, y: 440, w: 140, h: 200 },
+      { x: 620, y: 260, w: 200, h: 200 },
+      { x: 960, y: 80, w: 140, h: 160 },
+      { x: 960, y: 480, w: 140, h: 160 },
+    ],
+    enemies: [
+      { kind: "rook", x: 1120, y: 200 },
+      { kind: "rook", x: 1120, y: 520 },
+      { kind: "bruiser", x: 520, y: 160 },
+      { kind: "bruiser", x: 520, y: 560 },
+      { kind: "dasher", x: 800, y: 140 },
+      { kind: "dasher", x: 800, y: 580 },
+      { kind: "chaser", x: 200, y: 140 },
+      { kind: "chaser", x: 200, y: 580 },
+    ],
+  },
 ];
 
 const PLAYER_MAX_SHELLS = 5;
@@ -162,36 +301,20 @@ const wantsTouchUi = () =>
   window.matchMedia("(pointer: coarse)").matches
   || window.matchMedia("(max-width: 820px)").matches;
 
-const walls = [
-  // Left mid L
-  { x: 210, y: 170, w: 30, h: 170 },
-  { x: 210, y: 310, w: 150, h: 30 },
-  // Top center pillar
-  { x: 540, y: 70, w: 30, h: 150 },
-  // Top right L
-  { x: 850, y: 90, w: 220, h: 30 },
-  { x: 1040, y: 90, w: 30, h: 150 },
-  // Center corridor split (gap in the middle)
-  { x: 390, y: 330, w: 150, h: 30 },
-  { x: 700, y: 330, w: 150, h: 30 },
-  // Mid-right pillars
-  { x: 760, y: 200, w: 30, h: 90 },
-  { x: 760, y: 430, w: 30, h: 90 },
-  // Bottom left L
-  { x: 170, y: 510, w: 170, h: 30 },
-  { x: 170, y: 510, w: 30, h: 130 },
-  // Bottom center pillar
-  { x: 540, y: 500, w: 30, h: 150 },
-  // Bottom right L
-  { x: 850, y: 560, w: 220, h: 30 },
-  { x: 850, y: 440, w: 30, h: 150 },
-];
+let walls = LEVELS[0].walls;
 
 function random(min, max) { return Math.random() * (max - min) + min; }
 function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 function angleTo(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
 function angleDelta(a, b) { return Math.atan2(Math.sin(b - a), Math.cos(b - a)); }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function placePlayer(p, spot) {
+  p.x = spot.x;
+  p.y = spot.y;
+  p.angle = spot.angle ?? 0;
+  p.turret = spot.angle ?? 0;
+}
 
 function resetGame() {
   game = {
@@ -204,7 +327,8 @@ function resetGame() {
     killsSinceYarn: 0,
     lives: 3,
     player: {
-      x: 120, y: 360, r: 20, angle: 0, turret: 0, health: 1,
+      x: LEVELS[0].player.x, y: LEVELS[0].player.y, r: 20,
+      angle: LEVELS[0].player.angle ?? 0, turret: LEVELS[0].player.angle ?? 0, health: 1,
       cooldown: 0, invincible: 0, specials: 3, tread: 0, flash: 0,
     },
     enemies: [],
@@ -216,6 +340,7 @@ function resetGame() {
     banner: null,
     waveClearTimer: 0,
   };
+  walls = LEVELS[0].walls;
   pendingScore = null;
   highlightScoreId = null;
   updateHud();
@@ -228,7 +353,7 @@ function startGame() {
   ui.end.classList.add("hidden");
   ui.pause.classList.add("hidden");
   ui.waveHud.classList.remove("hidden");
-  ui.waveTotal.textContent = WAVES.length;
+  ui.waveTotal.textContent = LEVELS.length;
   ui.scoreEntry.classList.add("hidden");
   setTouchControlsVisible(true);
   ensureAudio();
@@ -237,66 +362,29 @@ function startGame() {
 }
 
 function startWave(index, isRetry = false) {
+  const level = LEVELS[index];
   game.wave = index;
   if (!isRetry) game.levelStartKills = game.kills;
-  const roster = WAVES[index];
-  const used = [];
-  roster.forEach((kind, i) => {
-    const spot = findSpawn(kind, used);
-    used.push(spot);
-    const enemy = makeEnemy(kind, spot.x, spot.y);
-    game.enemies.push(enemy);
-  });
-  game.banner = { text: `WAVE ${index + 1}`, sub: subtitleFor(index), time: 1.9 };
+  walls = level.walls;
+  placePlayer(game.player, level.player);
+  game.enemies = [];
+  game.shells = [];
+  game.yarn = [];
+  for (const spot of level.enemies) {
+    game.enemies.push(makeEnemy(spot.kind, spot.x, spot.y, spot.angle));
+  }
+  game.banner = { text: `WAVE ${index + 1}`, sub: level.name, time: 1.9 };
   updateHud();
   sound("wave");
 }
 
-function findSpawn(kind, used) {
-  const r = KINDS[kind].r + 2;
-  const clearance = kind === "rook" ? 86 : r;
-  const player = game.player;
-  const candidates = SPAWNS
-    .filter(p => !blockedAt(p.x, p.y, clearance))
-    .filter(p => distance(p, player) > 280)
-    .filter(p => used.every(u => distance(p, u) > 70))
-    .sort(() => Math.random() - 0.5);
-  if (candidates.length) return candidates[0];
-
-  // Fallback: probe open floor so we never spawn inside a barrier.
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const p = {
-      x: random(80, W - 80),
-      y: random(80, H - 80),
-    };
-    if (blockedAt(p.x, p.y, clearance)) continue;
-    if (distance(p, player) < 260) continue;
-    if (used.some(u => distance(p, u) < 70)) continue;
-    return p;
-  }
-  return { x: W - 120, y: H / 2 };
-}
-
-function subtitleFor(index) {
-  return [
-    "STANDARD BLUE PATROL",
-    "FAST CATS INCOMING",
-    "SPEED TRIAL",
-    "ROCKET CAT SPOTTED",
-    "THE VOID ROLLS IN",
-    "ARMORED LITTER",
-    "ROCKET ALLEY",
-    "NINE LIVES, NO MERCY",
-    "THE FINAL MEOWDOWN",
-  ][index] || "INCOMING";
-}
-
-function makeEnemy(kind, x, y) {
+function makeEnemy(kind, x, y, angle) {
   const k = KINDS[kind];
+  const facing = angle ?? Math.atan2(360 - y, 140 - x);
   return {
-    kind, x, y, r: k.r, angle: random(0, TAU), turret: random(0, TAU),
+    kind, x, y, r: k.r, angle: facing, turret: facing,
     health: k.health, maxHealth: k.health,
-    moveDir: random(0, TAU), repath: random(0.2, 1),
+    moveDir: facing, repath: random(0.2, 1),
     fireCd: random(1.4, 2.6), flash: 0, blink: 0, hitFlash: 0,
     distract: 0, tread: 0, spawnT: 0.7, alive: true, invincible: 0,
     meowCd: random(12, 24),
@@ -321,7 +409,7 @@ function endGame(won) {
     time: Math.floor(game.time),
     deaths: game.deaths,
     kills: game.kills,
-    wave: Math.min(game.wave + 1, WAVES.length),
+    wave: Math.min(game.wave + 1, LEVELS.length),
     won,
     unlimited: unlimitedLives,
     submitted: false,
@@ -345,7 +433,7 @@ function endGame(won) {
 
 function computeScore(won) {
   const time = Math.floor(game.time);
-  const wavesCleared = won ? WAVES.length : game.wave;
+  const wavesCleared = won ? LEVELS.length : game.wave;
   const base = wavesCleared * 8000 + game.kills * 450;
   const clearBonus = won ? 25000 : 0;
   const timeBonus = won
@@ -1062,13 +1150,12 @@ function damagePlayer(angle) {
 function replayCurrentLevel() {
   if (mode !== "respawning") return;
   const p = game.player;
-  p.x = 120;
-  p.y = 360;
-  p.angle = 0;
-  p.turret = 0;
+  const level = LEVELS[game.wave];
+  placePlayer(p, level.player);
   p.health = 1;
   p.cooldown = 0;
   p.invincible = 1.2;
+  p.specials = Math.max(p.specials, 1);
   game.enemies = [];
   game.shells = [];
   game.yarn = [];
@@ -1152,7 +1239,7 @@ function checkWaveProgress(dt) {
   game.waveClearTimer += dt;
   if (game.waveClearTimer < 1.3) return;
   game.waveClearTimer = 0;
-  if (game.wave + 1 < WAVES.length) {
+  if (game.wave + 1 < LEVELS.length) {
     startWave(game.wave + 1);
   } else if (mode === "playing") {
     endGame(true);

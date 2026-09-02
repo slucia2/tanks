@@ -14,9 +14,10 @@ Open the local URL printed by Vite.
 
 ## Objective
 
-Survive nine levels and destroy every cat-driven tank. Standard shells ricochet
-once and orange rockets ricochet twice, so bank shots around cover — and mind
-your own bounce-backs, because
+Survive nine **preset** missions and destroy every cat-driven tank. Each level
+has a fixed layout, fixed enemy placements, and a fixed player start — same
+clear every retry. Standard shells ricochet once and orange rockets ricochet
+twice, so bank shots around cover — and mind your own bounce-backs, because
 any shell (yours or theirs) can wreck any tank.
 
 ## Controls
